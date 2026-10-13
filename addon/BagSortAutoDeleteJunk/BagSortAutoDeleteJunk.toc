@@ -1,0 +1,21 @@
+## Interface: 16001, 11509
+## Title: Bag Sort & Auto Delete Junk
+## Notes: Sorts bags by vendor price and auto-deletes cheap junk so skinners keep room for leather.
+## Notes-ruRU: Сортирует сумки по цене продажи и автоматически удаляет дешёвый мусор, освобождая место для кожи.
+## Author: introqtua
+## Version: 1.0.0
+## SavedVariables: BSADJ_DB
+## IconTexture: Interface\AddOns\BagSortAutoDeleteJunk\Media\Icon.tga
+## AddonCompartmentFunc: BSADJ_OnAddonCompartmentClick
+## Category: Bags & Inventory
+## X-License: GPL-3.0
+
+Locales.lua
+Core.lua
+Compat.lua
+Scanner.lua
+Junk.lua
+Sort.lua
+UI\Widgets.lua
+UI\Options.lua
+UI\Buttons.lua

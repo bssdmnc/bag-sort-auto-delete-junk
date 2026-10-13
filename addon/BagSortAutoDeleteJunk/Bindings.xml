@@ -1,0 +1,11 @@
+<Bindings>
+    <Binding name="BSADJ_SORT" header="BSADJ" category="ADDONS">
+        BSADJ_SortBags()
+    </Binding>
+    <Binding name="BSADJ_JUNK" category="ADDONS">
+        BSADJ_DeleteJunk()
+    </Binding>
+    <Binding name="BSADJ_CONFIG" category="ADDONS">
+        BSADJ_OpenConfig()
+    </Binding>
+</Bindings>

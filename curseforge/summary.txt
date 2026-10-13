@@ -1,0 +1,1 @@
+Sort bags by vendor value and auto-delete cheap junk so your bags fill with leather and loot, not gray trash. Made for WoW Forever.
