@@ -1,1 +1,1 @@
-Sort bags by vendor value and auto-delete cheap junk so your bags fill with leather and loot, not gray trash. Made for WoW Forever.
+Find and delete the cheapest bag items to keep room for leather and loot. Preview is on by default, automatic deletion is optional, and bag sorting remains available separately. Made for WoW Forever.

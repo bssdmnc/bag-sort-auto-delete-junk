@@ -1,5 +1,4 @@
 local _, ns = ...
-local L = ns.L
 local C = ns.C
 
 local Sort = { running = false }
@@ -138,14 +137,11 @@ function Sort:NextMove(slots)
     return nil
 end
 
-function Sort:Stop(msg)
+function Sort:Stop()
     self.running = false
     if self.ticker then
         self.ticker:Cancel()
         self.ticker = nil
-    end
-    if msg and not self.silent then
-        ns.Print(msg, true)
     end
     ns.Fire("SORT_STATE")
     ns.Junk:Evaluate()
@@ -153,20 +149,20 @@ end
 
 function Sort:Step()
     if InCombatLockdown() then
-        return self:Stop(L["Sorting stopped: combat."])
+        return self:Stop()
     end
     if GetCursorInfo() then
-        return self:Stop(L["Sorting stopped: item on cursor."])
+        return self:Stop()
     end
     self.steps = self.steps + 1
     if self.steps > MAX_STEPS then
-        return self:Stop(L["Sorting stopped: timed out."])
+        return self:Stop()
     end
     local scan = ns.Scanner:Scan()
     if scan.locked then
         self.waited = self.waited + STEP_DELAY
         if self.waited > MAX_WAIT then
-            return self:Stop(L["Sorting stopped: timed out."])
+            return self:Stop()
         end
         return
     end
@@ -177,7 +173,7 @@ function Sort:Step()
         from, to = self:NextMove(slots)
     end
     if not from then
-        return self:Stop(L["Sorting finished."])
+        return self:Stop()
     end
     C.Pickup(from.bag, from.slot)
     C.Pickup(to.bag, to.slot)
@@ -186,24 +182,20 @@ function Sort:Step()
     end
 end
 
-function Sort:Start(silent)
+function Sort:Start()
     if not ns.db then
         return
     end
     if self.running then
-        ns.Print(L["Already sorting."], true)
         return
     end
     if InCombatLockdown() then
-        ns.Print(L["Sorting stopped: combat."], true)
         return
     end
     if GetCursorInfo() then
-        ns.Print(L["Sorting stopped: item on cursor."], true)
         return
     end
     self.running = true
-    self.silent = silent
     self.steps = 0
     self.waited = 0
     self.tried = {}
