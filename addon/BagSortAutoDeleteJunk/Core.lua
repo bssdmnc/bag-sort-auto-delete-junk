@@ -12,7 +12,7 @@ BINDING_NAME_BSADJ_JUNK = L["Delete junk"]
 BINDING_NAME_BSADJ_CONFIG = L["Open settings"]
 
 ns.defaults = {
-    version = 2,
+    version = 3,
     sort = {
         direction = "desc",
         emptyAt = "end",
@@ -26,18 +26,15 @@ ns.defaults = {
     },
     junk = {
         enabled = true,
-        dryRun = true,
-        auto = true,
-        grays = true,
-        whites = false,
-        whitesGearOnly = true,
-        priceEnabled = true,
-        priceThreshold = 100,
-        fullEnabled = true,
-        keepFree = 2,
-        fullMaxPrice = 10000,
+        auto = false,
+        qualities = {
+            [0] = true,
+            [1] = false,
+            [2] = false,
+        },
+        whiteGearOnly = false,
+        freeSlots = 0,
         maxPerRun = 10,
-        quiet = false,
         protect = {
             tradegoods = true,
             consumable = true,
@@ -73,10 +70,7 @@ local function merge(dst, src)
     return dst
 end
 
-function ns.Print(msg, force)
-    if not force and ns.db and ns.db.junk.quiet then
-        return
-    end
+function ns.Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cffd4a842BSADJ|r: " .. tostring(msg))
 end
 
@@ -151,6 +145,28 @@ function handlers.ADDON_LOADED(name)
         ns.db.sort.junkLast = false
         ns.db.version = 2
     end
+    if (ns.db.version or 1) < 3 then
+        local junk = ns.db.junk
+        junk.qualities = {
+            [0] = junk.grays ~= false,
+            [1] = junk.whites == true,
+            [2] = false,
+        }
+        junk.whiteGearOnly = junk.whitesGearOnly == true
+        junk.freeSlots = 0
+        junk.auto = false
+        junk.dryRun = nil
+        junk.grays = nil
+        junk.whites = nil
+        junk.whitesGearOnly = nil
+        junk.priceEnabled = nil
+        junk.priceThreshold = nil
+        junk.fullEnabled = nil
+        junk.keepFree = nil
+        junk.fullMaxPrice = nil
+        junk.quiet = nil
+        ns.db.version = 3
+    end
     frame:UnregisterEvent("ADDON_LOADED")
 end
 
@@ -177,7 +193,7 @@ function handlers.LOOT_CLOSED()
     if ns.db.sort.autoAfterLoot then
         ns.Debounce("autosort", 1.0, function()
             if not InCombatLockdown() and not ns.Sort:IsRunning() then
-                ns.Sort:Start(true)
+                ns.Sort:Start()
             end
         end)
     end
@@ -223,7 +239,7 @@ function BSADJ_OnAddonCompartmentClick(_, button)
     if button == "RightButton" then
         ns.Sort:Start()
     else
-        ns.Options:Toggle()
+        ns.Junk:DeleteNow(true)
     end
 end
 

@@ -25,9 +25,6 @@ local function showTooltip(owner, hints)
     GameTooltip:AddLine(ns.title)
     local scan = ns.Scanner:Scan()
     GameTooltip:AddLine(string.format(L["Free slots: %d"], scan.free), 0.8, 0.8, 0.8)
-    if ns.db.junk.dryRun then
-        GameTooltip:AddLine(L["Dry run (only report, never delete)"], 1, 0.5, 0.25)
-    end
     GameTooltip:AddLine(" ")
     junkTooltip(GameTooltip)
     if hints then
@@ -82,13 +79,13 @@ local function createMinimapButton()
         if button == "RightButton" then
             ns.Options:Toggle()
         elseif IsShiftKeyDown() then
-            ns.Junk:DeleteNow(true)
-        else
             ns.Sort:Start()
+        else
+            ns.Junk:DeleteNow(true)
         end
     end)
     b:SetScript("OnEnter", function(self)
-        showTooltip(self, { L["Left-click: sort bags"], L["Shift-click: delete junk"], L["Right-click: settings"], L["Drag to move"] })
+        showTooltip(self, { L["Left-click: delete junk"], L["Shift-click: sort bags"], L["Right-click: settings"], L["Drag to move"] })
     end)
     b:SetScript("OnLeave", GameTooltip_Hide)
     b.place = place
@@ -148,7 +145,7 @@ local function createBar()
 
     local sort = createIconButton(bar, ns.media .. "Icon.tga", 32)
     sort.icon:SetTexCoord(0, 1, 0, 1)
-    sort:SetPoint("LEFT", 6, 0)
+    sort:SetPoint("RIGHT", -6, 0)
     sort:SetScript("OnDragStart", startMove)
     sort:SetScript("OnDragStop", stopMove)
     sort:SetScript("OnClick", function(_, button)
@@ -164,7 +161,7 @@ local function createBar()
     sort:SetScript("OnLeave", GameTooltip_Hide)
 
     local junk = createIconButton(bar, "Interface\\Icons\\INV_Misc_Bone_01", 32)
-    junk:SetPoint("LEFT", sort, "RIGHT", 6, 0)
+    junk:SetPoint("RIGHT", sort, "LEFT", -6, 0)
     junk:SetScript("OnDragStart", startMove)
     junk:SetScript("OnDragStop", stopMove)
     junk:SetScript("OnClick", function(_, button)
@@ -212,7 +209,7 @@ function Buttons:UpdateJunk()
     local count = ns.Junk:Summary()
     local junk = bar.junk
     junk.count:SetText(count > 0 and count or "")
-    local needsClick = count > 0 and not ns.db.junk.dryRun and (ns.Junk.blocked or not ns.db.junk.auto)
+    local needsClick = count > 0 and (ns.Junk.blocked or not ns.db.junk.auto)
     if needsClick then
         junk.glow:Show()
         if not junk.anim:IsPlaying() then

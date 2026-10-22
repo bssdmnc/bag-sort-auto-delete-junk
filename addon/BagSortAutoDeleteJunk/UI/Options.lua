@@ -56,61 +56,94 @@ local function buildSortPage(page)
     end))
 end
 
-local PROTECT = {
-    { "tradegoods", "Trade goods" },
-    { "consumable", "Consumables" },
-    { "reagent", "Reagents" },
-    { "quest", "Quest items" },
-    { "recipe", "Recipes" },
-    { "projectile", "Projectiles" },
-    { "container", "Containers" },
-    { "quiver", "Quivers" },
-    { "craftreagent", "Crafting reagents" },
-}
-
 local function buildJunkPage(page)
     local j = function() return db().junk end
     page:Add(W.Header(page, L["Junk"]), 24)
     page:Add(W.Check(page, L["Enable junk deletion"], function() return j().enabled end, function(v) j().enabled = v end))
-    page:Add(W.Check(page, "|cffff8040" .. L["Dry run (only report, never delete)"] .. "|r", function() return j().dryRun end, function(v)
-        j().dryRun = v
-        ns.Junk.lastSignature = nil
-    end))
-    page:Add(W.Check(page, L["Delete automatically after looting"], function() return j().auto end, function(v)
+    page:Add(W.Check(page, L["Delete automatically"], function() return j().auto end, function(v)
         j().auto = v
         ns.Junk.blocked = false
     end))
-    page:Add(W.Check(page, L["Quiet (no chat messages)"], function() return j().quiet end, function(v) j().quiet = v end))
+    page:Gap(2)
+    page:Add(W.Header(page, L["Qualities to delete"]), 24)
+    local qualities = {
+        { 0, "|cff9d9d9d" .. L["Gray (poor) items"] .. "|r" },
+        { 1, L["White (common) items"] },
+        { 2, "|cff1eff00" .. L["Green (uncommon) items"] .. "|r" },
+    }
     local y = page.y
-    local g = W.Check(page, "|cff9d9d9d" .. L["Gray (poor) items"] .. "|r", function() return j().grays end, function(v) j().grays = v end)
-    g:SetPoint("TOPLEFT", page, "TOPLEFT", 8, y)
-    local w = W.Check(page, L["White (common) items"], function() return j().whites end, function(v) j().whites = v end)
-    w:SetPoint("TOPLEFT", page, "TOPLEFT", 240, y)
-    page.refreshers[#page.refreshers + 1] = g
-    page.refreshers[#page.refreshers + 1] = w
-    page.y = y - 28
-    page:Add(W.Check(page, "    " .. L["White items: only weapons and armor"], function() return j().whitesGearOnly end, function(v) j().whitesGearOnly = v end))
-    local info = page:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    page:Add(info, 18, 12)
-    info:SetText(L["Price = vendor sell price x stack size (e.g. 5 x 10s = 50s)"])
-    page:Add(W.Check(page, L["Delete when cheaper than threshold"], function() return j().priceEnabled end, function(v) j().priceEnabled = v end))
-    page:Add(W.Money(page, "    " .. L["Price threshold"], function() return j().priceThreshold end, function(v) j().priceThreshold = v end))
-    page:Add(W.Check(page, L["Delete cheapest junk when bags are full"], function() return j().fullEnabled end, function(v) j().fullEnabled = v end))
-    page:Add(W.Stepper(page, "    " .. L["Keep free slots"], 0, 40, 1, function() return j().keepFree end, function(v) j().keepFree = v end))
-    page:Add(W.Money(page, "    " .. L["Max price when freeing space"], function() return j().fullMaxPrice end, function(v) j().fullMaxPrice = v end))
-    page:Add(W.Stepper(page, L["Max deletions per run"], 1, 50, 1, function() return j().maxPerRun end, function(v) j().maxPerRun = v end))
-    page:Gap(4)
-    page:Add(W.Header(page, L["Never delete these categories:"]), 24)
-    y = page.y
-    for i, p in ipairs(PROTECT) do
-        local key = p[1]
-        local cb = W.Check(page, L[p[2]], function() return j().protect[key] end, function(v) j().protect[key] = v end)
-        local col = (i - 1) % 2
-        local row = math.floor((i - 1) / 2)
-        cb:SetPoint("TOPLEFT", page, "TOPLEFT", 8 + col * 232, y - row * 26)
+    for i, quality in ipairs(qualities) do
+        local qualityID = quality[1]
+        local cb = W.Check(page, quality[2], function() return j().qualities[qualityID] end, function(v)
+            j().qualities[qualityID] = v
+        end)
+        cb:SetPoint("TOPLEFT", page, "TOPLEFT", 8 + (i - 1) * 150, y)
         page.refreshers[#page.refreshers + 1] = cb
     end
-    page.y = y - math.ceil(#PROTECT / 2) * 26
+    page.y = y - 28
+    page:Add(W.Check(page, "    " .. L["White items: only weapons and armor"],
+        function() return j().whiteGearOnly end, function(v) j().whiteGearOnly = v end))
+    page:Add(W.Stepper(page, L["Show candidates when free slots are at or below"], 0, 40, 1,
+        function() return j().freeSlots end, function(v) j().freeSlots = v end))
+    local info = page:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    page:Add(info, 18, 12)
+    info:SetText(L["Candidates are sorted by vendor price per stack. Quest items and your protected list are never deleted. Categories below can be protected too."])
+    info:SetWidth(448)
+    info:SetJustifyH("LEFT")
+    local status = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    status:SetWidth(448)
+    status:SetHeight(140)
+    status:SetJustifyH("LEFT")
+    status:SetJustifyV("TOP")
+    status:SetWordWrap(true)
+    function status:Refresh()
+        local candidates = ns.Junk.candidates
+        if #candidates == 0 then
+            self:SetText(L["No junk candidates."])
+            return
+        end
+        local lines = { string.format(L["Junk to delete: %d (%s)"], ns.Junk:Summary()) }
+        for i, candidate in ipairs(candidates) do
+            if i > 6 then
+                lines[#lines + 1] = "..."
+                break
+            end
+            local item = candidate.item
+            lines[#lines + 1] = string.format("%s x%d (%s)",
+                item.link or (L["Unknown item"] .. " #" .. item.itemID),
+                item.count,
+                ns.Money(item.value))
+        end
+        self:SetText(table.concat(lines, "\n"))
+    end
+    page:Add(status, 146)
+    page:Gap(4)
+    page:Add(W.Header(page, L["Never delete these categories:"]), 24)
+    local protected = {
+        { "tradegoods", "Trade goods" },
+        { "consumable", "Consumables" },
+        { "reagent", "Reagents" },
+        { "recipe", "Recipes" },
+        { "projectile", "Projectiles" },
+        { "container", "Containers" },
+        { "quiver", "Quivers" },
+        { "craftreagent", "Crafting reagents" },
+    }
+    y = page.y
+    for i, category in ipairs(protected) do
+        local key = category[1]
+        local cb = W.Check(page, L[category[2]], function() return j().protect[key] end, function(v)
+            j().protect[key] = v
+        end)
+        local col = (i - 1) % 2
+        local row = math.floor((i - 1) / 2)
+        cb:SetPoint("TOPLEFT", page, "TOPLEFT", 8 + col * 232, y - row * 24)
+        page.refreshers[#page.refreshers + 1] = cb
+    end
+    page.y = y - math.ceil(#protected / 2) * 24
+    ns.On("JUNK_UPDATED", function()
+        status:Refresh()
+    end)
 end
 
 local function addToList(key, itemID)
@@ -317,7 +350,7 @@ function Options:Build()
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
     sub:SetWidth(390)
     sub:SetJustifyH("LEFT")
-    sub:SetText(L["Sorts bags by vendor price and deletes cheap junk so your bags keep room for leather and other loot."])
+    sub:SetText(L["Finds and deletes the cheapest eligible bag items so your bags keep room for leather and other loot; bag sorting is available separately."])
 
     local content = CreateFrame("Frame", nil, f)
     content:SetPoint("TOPLEFT", 12, -136)
@@ -325,8 +358,8 @@ function Options:Build()
 
     local pages = {}
     local tabs = {}
-    local builders = { buildSortPage, buildJunkPage, buildListsPage }
-    local names = { L["Sort"], L["Junk"], L["Lists"] }
+    local builders = { buildJunkPage, buildSortPage, buildListsPage }
+    local names = { L["Junk"], L["Sort"], L["Lists"] }
     local function selectTab(index)
         for i, p in ipairs(pages) do
             p:SetShown(i == index)
@@ -349,12 +382,10 @@ function Options:Build()
         tabs[i] = tab
     end
 
-    local sortBtn = W.Button(f, L["Sort bags"], 150, function() ns.Sort:Start() end)
-    sortBtn:SetPoint("BOTTOMLEFT", 14, 12)
     local junkBtn = W.Button(f, L["Delete junk"], 150, function() ns.Junk:DeleteNow(true) end)
-    junkBtn:SetPoint("LEFT", sortBtn, "RIGHT", 8, 0)
-    local prevBtn = W.Button(f, L["Preview candidates"], 150, function() ns.Junk:Preview() end)
-    prevBtn:SetPoint("LEFT", junkBtn, "RIGHT", 8, 0)
+    junkBtn:SetPoint("BOTTOMLEFT", 14, 12)
+    local sortBtn = W.Button(f, L["Sort bags"], 150, function() ns.Sort:Start() end)
+    sortBtn:SetPoint("LEFT", junkBtn, "RIGHT", 8, 0)
 
     f:SetScript("OnShow", function()
         selectTab(f.tab or 1)
@@ -363,6 +394,7 @@ function Options:Build()
         ns.Junk:Refresh()
     end)
     self.frame = f
+    f.selectTab = selectTab
     return f
 end
 
@@ -375,6 +407,13 @@ function Options:Toggle()
         HideUIPanel(InterfaceOptionsFrame)
     end
     f:SetShown(not f:IsShown())
+end
+
+function Options:OpenJunk()
+    local f = self:Build()
+    f.tab = 1
+    f:Show()
+    f.selectTab(1)
 end
 
 function Options:RegisterPanel()
@@ -391,7 +430,7 @@ function Options:RegisterPanel()
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
     sub:SetWidth(380)
     sub:SetJustifyH("LEFT")
-    sub:SetText(L["Sorts bags by vendor price and deletes cheap junk so your bags keep room for leather and other loot."])
+    sub:SetText(L["Finds and deletes the cheapest eligible bag items so your bags keep room for leather and other loot; bag sorting is available separately."])
     local open = W.Button(panel, L["Open settings"], 180, function() Options:Toggle() end)
     open:SetPoint("TOPLEFT", logo, "BOTTOMLEFT", 0, -16)
     local cmds = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")

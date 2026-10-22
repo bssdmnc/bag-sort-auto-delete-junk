@@ -1,6 +1,6 @@
 # Bag Sort & Auto Delete Junk
 
-Sort your bags by **vendor value** and **automatically delete cheap junk**, so your bags fill up with leather, cloth and loot instead of gray trash. Made for **WoW Forever**, perfect for leveling **Skinning** or any gathering profession.
+Find and delete the **cheapest eligible items in your bags** to keep room for leather, cloth and loot. Made for **WoW Forever**, perfect for leveling **Skinning** or any gathering profession. Bag sorting remains available as a separate feature.
 
 ## Sorting
 
@@ -13,30 +13,31 @@ Sort your bags by **vendor value** and **automatically delete cheap junk**, so y
 
 ## Junk deletion
 
-- Deletes **gray** items cheaper than a price you set (gold / silver / copper).
-- Optional: **white weapons and armor** too.
-- **Keep X free slots**: when your bags are almost full, the cheapest junk is removed first.
-- Use both rules together or just one.
+- Shows the cheapest eligible stacks when free slots reach your configured limit (**0 by default**).
+- Choose whether to include **gray, white, or green** items; **blue and higher-quality items are always excluded**.
+- Candidates are ranked by full stack vendor price, so even a green item can rank below a stack of gray or white items.
+- Quest items are always protected; category protections and your protected list are configurable.
 
 ## Safe by default
 
-- Starts in **dry-run mode**: it only tells you in chat what it *would* delete. Turn it off when you are happy.
-- Never deletes quest items, trade goods, consumables, reagents, crafting reagents, recipes, ammo, bags or anything green or better.
+- Starts in **preview mode**: candidates are shown in the settings and junk-button tooltip; nothing is deleted automatically.
+- **Automatic deletion is optional**. Manual deletion removes the lowest-priced candidates and reports one concise chat summary.
 - **Protected list** and **Always delete list**: shift-click, drag or type an item ID.
-- If the game blocks automatic deletion, the junk button glows and **one click** (or a key binding) deletes the junk.
+- If the game blocks automatic deletion, the junk button glows and a hardware click or key binding can delete the junk.
 
 ## How to use
 
 1. Type **/bsj** to open the settings.
-2. Click the **bag button** (minimap or floating bar) to sort.
-3. Check the chat preview, then switch off **Dry run** on the Junk tab.
+2. Set the qualities to consider and the free-slot threshold on the **Junk** tab.
+3. Review candidates in the junk-button tooltip or settings, then click **Delete junk** when ready.
+4. Enable **Delete automatically** only if you want automatic deletion. Use the separate **Sort** tab/button to sort bags.
 
 ## Commands
 
 - **/bsj**: settings window
 - **/bsj sort**: sort bags
 - **/bsj junk**: delete junk now
-- **/bsj preview**: list what would be deleted
+- **/bsj preview**: open the candidate list
 
 Key bindings: *Key Bindings > AddOns > Bag Sort & Auto Delete Junk*.
 
