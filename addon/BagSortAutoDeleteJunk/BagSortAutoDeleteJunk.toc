@@ -3,7 +3,7 @@
 ## Notes: Finds and deletes the cheapest eligible items so gatherers keep room for loot; bag sorting is available separately.
 ## Notes-ruRU: Находит и удаляет самые дешёвые подходящие предметы, освобождая место для добычи; сортировка сумок доступна отдельно.
 ## Author: introqtua
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: BSADJ_DB
 ## IconTexture: Interface\AddOns\BagSortAutoDeleteJunk\Media\Icon.tga
 ## AddonCompartmentFunc: BSADJ_OnAddonCompartmentClick
