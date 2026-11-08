@@ -10,6 +10,9 @@ function Junk:IsProtected(item)
     if ns.db.whitelist[item.itemID] then
         return true
     end
+    if C.IsProfessionTool and C.IsProfessionTool(item.itemID, item.bag, item.slot) then
+        return true
+    end
     if item.classKey and j.protect[item.classKey] then
         return true
     end

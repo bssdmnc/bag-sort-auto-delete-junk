@@ -42,6 +42,8 @@ function Scanner:ReadItem(bag, slot)
     end
     local item = {
         itemID = itemID,
+        bag = bag,
+        slot = slot,
         count = count or 1,
         quality = quality or iquality,
         locked = locked and true or false,
