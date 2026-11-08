@@ -100,3 +100,6 @@ L["Quest items at the start of bags"] = "Квестовые предметы в 
 L["White items: only weapons and armor"] = "Белые: только оружие и броня"
 L["Crafting reagents"] = "Реагенты профессий"
 L["Price = vendor sell price x stack size (e.g. 5 x 10s = 50s)"] = "Цена = цена продажи торговцу × размер стака (5 × 10с = 50с)"
+L["Item not found: %s"] = "Предмет не найден: %s"
+L["Added to %s: %s"] = "Добавлено в %s: %s"
+L["Removed from %s: %s"] = "Удалено из %s: %s"

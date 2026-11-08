@@ -11,8 +11,48 @@ BINDING_NAME_BSADJ_SORT = L["Sort bags"]
 BINDING_NAME_BSADJ_JUNK = L["Delete junk"]
 BINDING_NAME_BSADJ_CONFIG = L["Open settings"]
 
+local defaultWhitelist = {
+    [7005] = true,
+    [12709] = true,
+    [19901] = true,
+    [2901] = true,
+    [5956] = true,
+    [5507] = true,
+    [4371] = true,
+    [5060] = true,
+    [6218] = true,
+    [6219] = true,
+    [6338] = true,
+    [6339] = true,
+    [11128] = true,
+    [11130] = true,
+    [11144] = true,
+    [11145] = true,
+    [16206] = true,
+    [16207] = true,
+    [22461] = true,
+    [22462] = true,
+    [22463] = true,
+    [6256] = true,
+    [6365] = true,
+    [6366] = true,
+    [6367] = true,
+    [12225] = true,
+    [19970] = true,
+    [25978] = true,
+    [44050] = true,
+    [45858] = true,
+    [45991] = true,
+    [45992] = true,
+    [9149] = true,
+    [13503] = true,
+    [4471] = true,
+    [4470] = true,
+}
+ns.DEFAULT_WHITELIST = defaultWhitelist
+
 ns.defaults = {
-    version = 3,
+    version = 4,
     sort = {
         direction = "desc",
         emptyAt = "end",
@@ -47,7 +87,7 @@ ns.defaults = {
             craftreagent = true,
         },
     },
-    whitelist = {},
+    whitelist = defaultWhitelist,
     blacklist = {},
     ui = {
         minimap = { show = true, angle = 200 },
@@ -166,6 +206,16 @@ function handlers.ADDON_LOADED(name)
         junk.fullMaxPrice = nil
         junk.quiet = nil
         ns.db.version = 3
+    end
+    if (ns.db.version or 1) < 4 then
+        ns.db.whitelist = ns.db.whitelist or {}
+        ns.db.blacklist = ns.db.blacklist or {}
+        for id in pairs(ns.DEFAULT_WHITELIST) do
+            if not ns.db.blacklist[id] then
+                ns.db.whitelist[id] = true
+            end
+        end
+        ns.db.version = 4
     end
     frame:UnregisterEvent("ADDON_LOADED")
 end

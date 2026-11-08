@@ -156,6 +156,9 @@ local function addToList(key, itemID)
     C.RequestItem(itemID)
     ns.Fire("LISTS_CHANGED")
     ns.Fire("SETTINGS_CHANGED")
+    local _, link = C.ItemInfo(itemID)
+    local listName = key == "whitelist" and L["Protected (never delete)"] or L["Always delete"]
+    ns.Print(string.format(L["Added to %s: %s"], listName, link or ("#" .. itemID)))
 end
 
 local activeListBox
@@ -172,14 +175,26 @@ local function itemList(page, key, title, color)
     box:SetPoint("TOPLEFT", 10, -22)
     box:SetAutoFocus(false)
     local function commit()
-        local id = C.ParseItemID(box:GetText())
-        addToList(key, id)
-        box:SetText("")
-        box:ClearFocus()
+        local raw = strtrim(box:GetText() or "")
+        if raw == "" then
+            box:ClearFocus()
+            return
+        end
+        local id = C.ParseItemID(raw)
+        if id then
+            addToList(key, id)
+            box:SetText("")
+            box:ClearFocus()
+        else
+            ns.Print(string.format(L["Item not found: %s"], raw))
+        end
     end
     box:SetScript("OnEnterPressed", commit)
     box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    box:SetScript("OnEditFocusGained", function(self) activeListBox = self end)
+    box:SetScript("OnEditFocusGained", function(self)
+        activeListBox = self
+        Options.activeListKey = key
+    end)
     box:SetScript("OnEditFocusLost", function(self)
         if activeListBox == self then
             activeListBox = nil
@@ -192,9 +207,20 @@ local function itemList(page, key, title, color)
             addToList(key, id)
             return true
         end
+        return false
     end
+    f:EnableMouse(true)
+    f:SetScript("OnReceiveDrag", takeCursor)
+    f:HookScript("OnMouseDown", function()
+        Options.activeListKey = key
+        takeCursor()
+    end)
+
     box:SetScript("OnReceiveDrag", takeCursor)
-    box:HookScript("OnMouseDown", takeCursor)
+    box:HookScript("OnMouseDown", function()
+        Options.activeListKey = key
+        takeCursor()
+    end)
 
     local add = W.Button(f, L["Add"], 56, function()
         if not takeCursor() then
@@ -203,6 +229,9 @@ local function itemList(page, key, title, color)
     end)
     add:SetPoint("LEFT", box, "RIGHT", 6, 0)
     add:SetScript("OnReceiveDrag", takeCursor)
+    add:HookScript("OnMouseDown", function()
+        Options.activeListKey = key
+    end)
 
     local hint = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     hint:SetPoint("TOPLEFT", 6, -46)
@@ -216,9 +245,19 @@ local function itemList(page, key, title, color)
     local child = CreateFrame("Frame", nil, scroll)
     child:SetSize(200, 1)
     scroll:SetScrollChild(child)
-    scroll:SetScript("OnReceiveDrag", takeCursor)
     scroll:EnableMouse(true)
-    scroll:SetScript("OnMouseDown", takeCursor)
+    scroll:SetScript("OnReceiveDrag", takeCursor)
+    scroll:HookScript("OnMouseDown", function()
+        Options.activeListKey = key
+        takeCursor()
+    end)
+
+    child:EnableMouse(true)
+    child:SetScript("OnReceiveDrag", takeCursor)
+    child:HookScript("OnMouseDown", function()
+        Options.activeListKey = key
+        takeCursor()
+    end)
 
     local rows = {}
     local function getRow(i)
@@ -241,9 +280,13 @@ local function itemList(page, key, title, color)
         r.remove:SetSize(22, 22)
         r.remove:SetPoint("RIGHT", 0, 0)
         r.remove:SetScript("OnClick", function()
-            db()[key][r.itemID] = nil
+            local id = r.itemID
+            db()[key][id] = nil
             ns.Fire("LISTS_CHANGED")
             ns.Fire("SETTINGS_CHANGED")
+            local _, link = C.ItemInfo(id)
+            local listName = key == "whitelist" and L["Protected (never delete)"] or L["Always delete"]
+            ns.Print(string.format(L["Removed from %s: %s"], listName, link or ("#" .. id)))
         end)
         local hl = r:CreateTexture(nil, "HIGHLIGHT")
         hl:SetAllPoints()
@@ -310,9 +353,30 @@ local function buildListsPage(page)
     black:SetPoint("TOPLEFT", page, "TOPLEFT", 244, y)
     page.refreshers[#page.refreshers + 1] = white
     page.refreshers[#page.refreshers + 1] = black
+    if not Options.hookedModifiedClick then
+        Options.hookedModifiedClick = true
+        hooksecurefunc("HandleModifiedItemClick", function(link)
+            if not link or not IsShiftKeyDown() then
+                return
+            end
+            if ChatEdit_GetActiveWindow and ChatEdit_GetActiveWindow() then
+                return
+            end
+            if Options.frame and Options.frame:IsShown() and Options.frame.tab == 3 then
+                local id = C.ParseItemID(link)
+                if id then
+                    addToList(Options.activeListKey or "whitelist", id)
+                    if activeListBox then
+                        activeListBox:SetText("")
+                        activeListBox:ClearFocus()
+                    end
+                end
+            end
+        end)
+    end
     if ChatEdit_InsertLink then
         hooksecurefunc("ChatEdit_InsertLink", function(link)
-            if activeListBox and activeListBox:HasFocus() and link then
+            if activeListBox and link then
                 activeListBox:SetText(link)
             end
         end)

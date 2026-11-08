@@ -22,7 +22,7 @@ Find and delete the **cheapest eligible items in your bags** to keep room for le
 
 - Starts in **preview mode**: candidates are shown in the settings and junk-button tooltip; nothing is deleted automatically.
 - **Automatic deletion is optional**. Manual deletion removes the lowest-priced candidates and reports one concise chat summary.
-- **Protected list** and **Always delete list**: shift-click, drag or type an item ID.
+- **Protected list** and **Always delete list**: shift-click, drag, or type an item name or ID. Profession tools are protected by default.
 - If the game blocks automatic deletion, the junk button glows and a hardware click or key binding can delete the junk.
 
 ## How to use
